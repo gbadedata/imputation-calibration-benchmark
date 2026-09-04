@@ -1,0 +1,13 @@
+data/raw/
+data/derived/
+*.vcf.gz
+*.vcf.gz.tbi
+*.bgen
+*.sample
+*.jar
+*.zip
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
