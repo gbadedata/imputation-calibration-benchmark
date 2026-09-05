@@ -1,0 +1,13 @@
+{
+  "n_input_variants": 20000,
+  "n_samples": 100,
+  "n_geno_removed": 0,
+  "n_maf_removed": 2280,
+  "n_hwe_removed": 22,
+  "n_kept_variants": 17698,
+  "n_kinship_removed_samples": 33,
+  "geno_threshold": 0.02,
+  "maf_threshold": 0.01,
+  "hwe_threshold": 1e-6,
+  "king_cutoff": 0.0884
+}

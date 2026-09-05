@@ -30,3 +30,10 @@ class Settings(BaseSettings):
     dr2_bins: int = 10
     bootstrap_reps: int = 1000
     abstention_accuracy_floor: float = 0.8  # CI lower bound required to retain a DR2 bin
+
+    # Imputation validation (Phase 3)
+    coverage_floor_matched: float = 0.95  # Condition A: hard gate
+    coverage_floor_mismatched: float = 0.5  # Condition B: hard-fail only below this; value reported
+    dr2_missing_max_matched: float = 0.01  # max fraction of eval sites lacking DR2, Condition A
+    beagle_xmx_gb: int = 12
+    beagle_nthreads: int = 6

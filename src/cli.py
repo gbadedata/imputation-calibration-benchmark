@@ -19,6 +19,7 @@ from pathlib import Path
 
 from config.settings import Settings
 from src.bgen_roundtrip import read_signature, verify_round_trip
+from src.imputation_check import check_condition, parse_dr2_table, read_lines
 from src.qc_report import build_report, render_markdown
 from src.sample_design import design_samples, read_panel, read_sample_list, write_design
 from src.sites import (
@@ -55,6 +56,16 @@ def main(argv: list[str] | None = None) -> int:
     p_bgen.add_argument("--original", type=Path, required=True)
     p_bgen.add_argument("--round-tripped", type=Path, required=True)
 
+    p_imp = sub.add_parser("impute-check")
+    p_imp.add_argument("--condition", choices=["matched", "mismatched"], required=True)
+    p_imp.add_argument("--header", type=Path, required=True)
+    p_imp.add_argument("--samples", type=Path, required=True)
+    p_imp.add_argument("--targets", type=Path, required=True)
+    p_imp.add_argument("--marker-ids", type=Path, required=True)
+    p_imp.add_argument("--eval-ids", type=Path, required=True)
+    p_imp.add_argument("--dr2-table", type=Path, required=True)
+    p_imp.add_argument("--out", type=Path, required=True)
+
     args = parser.parse_args(argv)
     settings = Settings()
 
@@ -89,11 +100,27 @@ def main(argv: list[str] | None = None) -> int:
         (args.outdir / "qc_report.json").write_text(report.model_dump_json(indent=2) + "\n")
         (args.outdir / "qc_report.md").write_text(render_markdown(report) + "\n")
         summary = report.model_dump()
-    else:  # bgen-verify
+    elif args.command == "bgen-verify":
         verdict = verify_round_trip(
             read_signature(args.original), read_signature(args.round_tripped)
         )
         summary = {"verdict": verdict}
+    else:  # impute-check
+        dr2_values, n_missing = parse_dr2_table(args.dr2_table)
+        metrics = check_condition(
+            condition=args.condition,
+            header_text=args.header.read_text(),
+            sample_ids=read_lines(args.samples),
+            target_ids=read_lines(args.targets),
+            output_marker_ids=set(read_lines(args.marker_ids)),
+            eval_site_ids=set(read_lines(args.eval_ids)),
+            dr2_values=dr2_values,
+            n_dr2_missing=n_missing,
+            settings=settings,
+        )
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(metrics.model_dump_json(indent=2) + "\n")
+        summary = metrics.model_dump()
 
     json.dump(summary, sys.stdout, indent=2)
     sys.stdout.write("\n")
