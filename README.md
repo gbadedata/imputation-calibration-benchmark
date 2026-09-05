@@ -2,7 +2,7 @@
 
 [![ci](https://github.com/gbadedata/imputation-calibration-benchmark/actions/workflows/ci.yml/badge.svg)](https://github.com/gbadedata/imputation-calibration-benchmark/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.12-blue)
-![tests](https://img.shields.io/badge/tests-39%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-63%20passing-brightgreen)
 
 **Is Beagle's DR2 a calibrated confidence score, and does its calibration survive an
 ancestry-mismatched reference panel?**
@@ -71,9 +71,34 @@ result, it ships as found.
 |---|---|---|
 | 0 | Verify every external dependency before building | Complete, 4/4 gates ([docs/verification.md](docs/verification.md)) |
 | 1 | Sample + site design, array simulation | Complete, gated: exact accounting of all 1,739,315 input sites |
-| 2 | Kinship, chip QC, QC report, BGEN evidence | Code complete (39 tests), run in progress |
-| 3 | Dual-condition Beagle imputation, Nextflow-wrapped | Pending |
-| 4 | Calibration curves, abstention, bootstrap CIs, figures | Pending |
+| 2 | Kinship, chip QC, QC report, BGEN evidence | Complete: 33 kinship removals; 20,000 -> 17,698 sites |
+| 3 | Dual-condition Beagle imputation, Nextflow-wrapped | Complete: coverage 1.0 both conditions |
+| 4 | Calibration curves, abstention, bootstrap CIs, figures | Complete: see Results |
+
+## Results
+
+Threshold rule: retain only variants with DR2 >= 0.8, chosen on
+Condition A alone (smallest bin edge with every bin above clearing a CI-lower
+accuracy floor of 0.8), transferred unchanged to Condition B.
+1000 bootstrap reps, seed 42, 226,943 evaluation
+variants per condition.
+
+| | A: matched (AFR panel) | B: mismatched (EUR panel) |
+|---|---|---|
+| ECE (weighted mean promise-vs-delivery gap) | 0.026 | 0.205 |
+| Fraction abstained under the shared rule | 0.129 | 0.541 |
+| Mean empirical r2 among retained | 0.940 (95% CI 0.939 to 0.940) | 0.671 (95% CI 0.669 to 0.673) |
+
+**Finding: DR2 calibration does not survive reference-panel ancestry mismatch.** ECE
+degrades roughly 8-fold, and the abstention policy calibrated on the matched condition
+fails to protect the mismatched one: Condition B abstains on more than half of all
+variants, yet the variants it still expresses confidence in deliver r2 well below the
+promised floor. A confidence threshold tuned on majority-ancestry data quietly
+overpromises on minority-ancestry data even after aggressive abstention. Condition A
+behaves as a calibrated system should. Per-bin tables, MAF-stratified curves and all
+CIs: [results/benchmark_report.json](results/benchmark_report.json); figures in
+[evidence/figures/](evidence/figures/). Interpret within the known limitations above,
+in particular the within-cohort circularity favouring Condition A.
 
 ## Findings so far (and what they teach)
 

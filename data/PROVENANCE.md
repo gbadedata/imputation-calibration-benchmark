@@ -50,3 +50,32 @@ OpenJDK 21.0.12, Beagle 5.5 (27Feb25.75f), plink2 alpha 7.4.
 2973186f5c798496e49b0cbb0691078c  data/derived/panelA.vcf.gz
 38fc6b76a211fb49071dfca896c2b65e  data/derived/panelB.vcf.gz
 ```
+
+### Phase 4 run 2026-09-05, commit a3c1455
+```
+{
+  "A_ece": 0.025978,
+  "B_ece": 0.20494,
+  "A_abst": {
+    "condition": "matched",
+    "threshold": 0.8,
+    "fraction_abstained": 0.129143,
+    "n_retained": 197635,
+    "retained_mean_r2": 0.939659,
+    "retained_r2_ci_low": 0.939261,
+    "retained_r2_ci_high": 0.940061
+  },
+  "B_abst": {
+    "condition": "mismatched",
+    "threshold": 0.8,
+    "fraction_abstained": 0.54073,
+    "n_retained": 104228,
+    "retained_mean_r2": 0.670895,
+    "retained_r2_ci_low": 0.669371,
+    "retained_r2_ci_high": 0.672508
+  }
+}
+b9b8d7a41e99975d7a99f5becb1fbaca  results/benchmark_report.json
+4ec7f42a6632e14e41600de3213c250b  evidence/figures/fig1_calibration.png
+0fe28717ab1b3fb5e5bfe62031103016  evidence/figures/fig2_tradeoff.png
+```
