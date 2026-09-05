@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use this benchmark, please cite it as below."
+title: "imputation-calibration-benchmark: DR2 calibration under reference-panel ancestry mismatch"
+authors:
+  - family-names: "Odimayo"
+    given-names: "Oluwagbade"
+year: 2026
+url: "https://github.com/gbadedata/imputation-calibration-benchmark"

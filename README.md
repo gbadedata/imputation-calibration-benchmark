@@ -2,6 +2,7 @@
 
 [![ci](https://github.com/gbadedata/imputation-calibration-benchmark/actions/workflows/ci.yml/badge.svg)](https://github.com/gbadedata/imputation-calibration-benchmark/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.12-blue)
+![license](https://img.shields.io/badge/license-MIT-green)
 ![tests](https://img.shields.io/badge/tests-63%20passing-brightgreen)
 
 **Is Beagle's DR2 a calibrated confidence score, and does its calibration survive an
@@ -91,16 +92,76 @@ variants per condition.
 
 ![Calibration curves: matched vs ancestry-mismatched reference panel](evidence/figures/fig1_calibration.png)
 
-**Finding: DR2 calibration does not survive reference-panel ancestry mismatch.** ECE
-degrades roughly 8-fold, and the abstention policy calibrated on the matched condition
-fails to protect the mismatched one: Condition B abstains on more than half of all
-variants, yet the variants it still expresses confidence in deliver r2 well below the
-promised floor. A confidence threshold tuned on majority-ancestry data quietly
-overpromises on minority-ancestry data even after aggressive abstention. Condition A
-behaves as a calibrated system should. Per-bin tables, MAF-stratified curves and all
-CIs: [results/benchmark_report.json](results/benchmark_report.json); figures in
-[evidence/figures/](evidence/figures/). Interpret within the known limitations above,
-in particular the within-cohort circularity favouring Condition A.
+**Finding: DR2 calibration does not survive reference-panel ancestry mismatch.**
+Calibration error grows roughly 8-fold, and an abstention policy tuned on the matched
+condition fails to protect the mismatched one. Per-bin tables, MAF-stratified results
+and all CIs: [results/benchmark_report.json](results/benchmark_report.json).
+
+### How to read the numbers
+
+- **ECE 0.026 vs 0.205.** On the matched panel, DR2's promise and the
+  delivered accuracy differ by about 3 points on average; under mismatch the average
+  shortfall is about 20 points, variant-weighted. Same software, same targets, same
+  sites - only the panel changed.
+- **Abstention 12.9% vs 54.1% under the identical rule.**
+  DR2 is not oblivious to mismatch: it downgrades enough variants that the shared
+  threshold discards over half the evaluation set in Condition B. Relative ranking
+  partially survives.
+- **Retained r2 0.671 against a promised floor of 0.8.**
+  This is the operative failure: absolute calibration does not survive. Even after
+  discarding the half of the genome it distrusts, the mismatched condition's remaining
+  "confident" variants underdeliver by ~0.13. Abstention makes the failure quieter,
+  not smaller. Condition A retains 0.940, exactly as a calibrated
+  system should.
+- **19,094 evaluation sites (7.8%) were monomorphic within the 100 AFR
+  targets** and excluded with a count, plus the one duplicate marker
+  (n_missing_in_imputed = 0) - the same frequency-divergence story that removed
+  11.4% of array sites in chip QC, visible again at evaluation.
+
+### Why this happens
+
+DR2 is Beagle's model-internal accuracy estimate, derived from posterior genotype
+probabilities under its haplotype model. Those posteriors are only as honest as the
+assumption that the reference panel spans the target haplotypes. A EUR panel lacks
+AFR haplotype backbones, carries different LD structure, and is monomorphic at many
+AFR-segregating sites, so the model matches targets to the wrong haplotype copies
+*with confidence*. Miscalibration under mismatch is therefore a representativeness
+failure of the model's world, not sampling noise - which is why more data from the
+same panel would not fix it.
+
+### Operational reading
+
+Any workflow that selects or excludes people by imputed genotype - recall-by-genotype
+studies, PRS-tiered recruitment, variant-conditioned eligibility - and applies one
+global confidence threshold will hand minority-ancestry participants quietly worse
+data than the threshold implies, even after aggressive abstention. The mitigation is
+not a stricter global threshold (Condition B already abstains on 54% and still
+underdelivers) but ancestry-aware calibration: per-ancestry thresholds, or empirical
+recalibration of DR2 against a held-out truth subset per cohort. This benchmark
+measures the size of that problem on a controlled model system.
+
+### What would change the conclusion
+
+- If Condition B's curve tracked the diagonal (ECE comparable to A's), the thesis
+  fails. It does not, but that is the falsifying observation this design permits.
+- The circularity limitation cuts both ways: Condition A's panel shares platform,
+  joint calling and cohort LD with the targets, which inflates A and may inflate part
+  of the A-vs-B contrast beyond ancestry per se. The clean follow-up is an external
+  matched panel (e.g. a TOPMed-style AFR reference) for Condition A.
+- Panel sizes are 533 (A) vs 498 (B) - near-matched by design, so a ~7% size
+  difference cannot plausibly account for an 8-fold ECE gap, but exact size-matching
+  would remove the confound entirely.
+- MAF-stratified panels in Figure 1 show whether the gap is confined to rare
+  variants; per-stratum ECEs are in the report JSON for the reader to check.
+
+### Reading the figures
+
+Figure 1: the dotted diagonal is perfect honesty (promised = delivered). Condition A
+(solid) should hug it; Condition B (dashed) sags below it - vertical distance IS the
+overconfidence. The dash-dot vertical line is the abstention threshold chosen on A
+and transferred to B; small multiples repeat the comparison within MAF strata.
+Figure 2 sweeps the threshold and shows what accuracy each condition can actually
+buy at each abstention price.
 
 ## Findings so far (and what they teach)
 
