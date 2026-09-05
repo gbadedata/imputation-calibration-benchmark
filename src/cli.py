@@ -2,7 +2,9 @@
 
 Usage:
     python -m src.cli design-samples --panel <panel_file> --outdir <dir> [--removals <file>]
-    python -m src.cli make-sites --hm3 <w_hm3.snplist> --site-table <tsv> --outdir <dir>
+    python -m src.cli make-sites --mode thin --site-table <tsv> --outdir <dir>
+    python -m src.cli qc-report --qc-log <log> --snplist <f> --king-id <f> --outdir <dir>
+    python -m src.cli bgen-verify --original <sig> --round-tripped <sig>
 
 All thresholds and seeds come from config.settings.Settings (ICB_* env overridable);
 the CLI deliberately exposes no tuning flags so runs are reproducible from the repo alone.
@@ -16,6 +18,8 @@ import sys
 from pathlib import Path
 
 from config.settings import Settings
+from src.bgen_roundtrip import read_signature, verify_round_trip
+from src.qc_report import build_report, render_markdown
 from src.sample_design import design_samples, read_panel, read_sample_list, write_design
 from src.sites import (
     partition_sites,
@@ -41,6 +45,16 @@ def main(argv: list[str] | None = None) -> int:
     p_sites.add_argument("--outdir", type=Path, required=True)
     p_sites.add_argument("--hm3", type=Path, default=None, help="required in hm3 mode")
 
+    p_qc = sub.add_parser("qc-report")
+    p_qc.add_argument("--qc-log", type=Path, required=True)
+    p_qc.add_argument("--snplist", type=Path, required=True)
+    p_qc.add_argument("--king-id", type=Path, required=True)
+    p_qc.add_argument("--outdir", type=Path, required=True)
+
+    p_bgen = sub.add_parser("bgen-verify")
+    p_bgen.add_argument("--original", type=Path, required=True)
+    p_bgen.add_argument("--round-tripped", type=Path, required=True)
+
     args = parser.parse_args(argv)
     settings = Settings()
 
@@ -49,7 +63,7 @@ def main(argv: list[str] | None = None) -> int:
         removals = read_sample_list(args.removals) if args.removals else set()
         design = design_samples(panel, removals, settings)
         summary = write_design(design, args.outdir, settings)
-    else:
+    elif args.command == "make-sites":
         records = read_site_table(args.site_table)
         if args.mode == "hm3":
             if args.hm3 is None:
@@ -61,6 +75,25 @@ def main(argv: list[str] | None = None) -> int:
                 records, settings.n_array_sites, settings.eval_maf_floor
             )
         summary = write_partition(partition, args.outdir)
+    elif args.command == "qc-report":
+        report = build_report(
+            args.qc_log.read_text(),
+            snplist_path=args.snplist,
+            king_id_path=args.king_id,
+            geno=settings.geno_missing_max,
+            maf=settings.maf_min,
+            hwe=settings.hwe_p,
+            king_cutoff=settings.king_cutoff,
+        )
+        args.outdir.mkdir(parents=True, exist_ok=True)
+        (args.outdir / "qc_report.json").write_text(report.model_dump_json(indent=2) + "\n")
+        (args.outdir / "qc_report.md").write_text(render_markdown(report) + "\n")
+        summary = report.model_dump()
+    else:  # bgen-verify
+        verdict = verify_round_trip(
+            read_signature(args.original), read_signature(args.round_tripped)
+        )
+        summary = {"verdict": verdict}
 
     json.dump(summary, sys.stdout, indent=2)
     sys.stdout.write("\n")
