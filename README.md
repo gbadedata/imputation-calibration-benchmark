@@ -89,6 +89,8 @@ variants per condition.
 | Fraction abstained under the shared rule | 0.129 | 0.541 |
 | Mean empirical r2 among retained | 0.940 (95% CI 0.939 to 0.940) | 0.671 (95% CI 0.669 to 0.673) |
 
+![Calibration curves: matched vs ancestry-mismatched reference panel](evidence/figures/fig1_calibration.png)
+
 **Finding: DR2 calibration does not survive reference-panel ancestry mismatch.** ECE
 degrades roughly 8-fold, and the abstention policy calibrated on the matched condition
 fails to protect the mismatched one: Condition B abstains on more than half of all
