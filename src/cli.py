@@ -20,6 +20,7 @@ from pathlib import Path
 from config.settings import Settings
 from src.bgen_roundtrip import read_signature, verify_round_trip
 from src.imputation_check import check_condition, parse_dr2_table, read_lines
+from src.phase4 import run_phase4
 from src.qc_report import build_report, render_markdown
 from src.sample_design import design_samples, read_panel, read_sample_list, write_design
 from src.sites import (
@@ -66,6 +67,12 @@ def main(argv: list[str] | None = None) -> int:
     p_imp.add_argument("--dr2-table", type=Path, required=True)
     p_imp.add_argument("--out", type=Path, required=True)
 
+    p_cal = sub.add_parser("calibrate")
+    p_cal.add_argument("--extract-dir", type=Path, required=True,
+                       help="dir with {A,B}_ds.tsv, {A,B}_dr2.tsv, truth_gt.tsv, *_samples.txt")
+    p_cal.add_argument("--report", type=Path, required=True)
+    p_cal.add_argument("--figures-dir", type=Path, required=True)
+
     args = parser.parse_args(argv)
     settings = Settings()
 
@@ -105,6 +112,8 @@ def main(argv: list[str] | None = None) -> int:
             read_signature(args.original), read_signature(args.round_tripped)
         )
         summary = {"verdict": verdict}
+    elif args.command == "calibrate":
+        summary = run_phase4(args.extract_dir, args.report, args.figures_dir, settings)
     else:  # impute-check
         dr2_values, n_missing = parse_dr2_table(args.dr2_table)
         metrics = check_condition(

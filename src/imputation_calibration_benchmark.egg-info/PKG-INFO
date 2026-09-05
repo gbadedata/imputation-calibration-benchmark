@@ -5,6 +5,8 @@ Summary: Is Beagle's DR2 a calibrated confidence score, and does its calibration
 Requires-Python: >=3.12
 Requires-Dist: pydantic>=2.0
 Requires-Dist: pydantic-settings>=2.0
+Requires-Dist: numpy>=1.26
+Requires-Dist: matplotlib>=3.8
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0; extra == "dev"
 Requires-Dist: ruff>=0.4; extra == "dev"

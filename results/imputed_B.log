@@ -1,0 +1,43 @@
+beagle.27Feb25.75f.jar (version 5.5)
+Copyright (C) 2014-2024 Brian L. Browning
+Enter "java -jar beagle.27Feb25.75f.jar" to list command line argument
+Start time: 10:00 AM BST on 05 Sep 2026
+
+Command line: java -Xmx12288m -jar beagle.27Feb25.75f.jar
+  gt=data/derived/array_targets.qc.vcf.gz
+  ref=data/derived/panelB.vcf.gz
+  map=data/raw/plink.chr20.GRCh37.map
+  out=results/imputed_B
+  nthreads=6
+
+Reference samples:                  498
+Study     samples:                  100
+
+Window 1 [20:60343-17038340]
+Reference markers:              486,692
+Study     markers:                5,470
+
+Imputation time:               11 seconds
+
+Window 2 [20:16012786-51450735]
+Reference markers:              918,142
+Study     markers:                8,796
+
+Imputation time:               13 seconds
+
+Window 3 [20:50160268-62965354]
+Reference markers:              402,423
+Study     markers:                4,177
+
+Imputation time:               6 seconds
+
+Cumulative Statistics:
+
+Reference markers:            1,739,315
+Study     markers:               17,698
+
+Imputation time:               30 seconds
+Total time:                    42 seconds
+
+End time: 10:01 AM BST on 05 Sep 2026
+beagle.27Feb25.75f.jar finished

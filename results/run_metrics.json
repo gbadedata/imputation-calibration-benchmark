@@ -1,0 +1,38 @@
+{
+  "dry_run": {
+    "peak_rss_kb": 1169104,
+    "wall_clock": "0:11.47"
+  },
+  "condition_A": {
+    "peak_rss_kb": 7386624,
+    "wall_clock": "0:53.06",
+    "condition": "matched",
+    "dr2_declared": true,
+    "ds_declared": true,
+    "n_samples": 100,
+    "samples_match_targets": true,
+    "n_markers_output": 1739314,
+    "n_eval_sites_expected": 246037,
+    "n_eval_sites_covered": 246037,
+    "eval_coverage": 1.0,
+    "n_dr2_missing": 0,
+    "dr2_missing_fraction": 0.0,
+    "n_dr2_out_of_range": 0
+  },
+  "condition_B": {
+    "peak_rss_kb": 5744492,
+    "wall_clock": "0:43.52",
+    "condition": "mismatched",
+    "dr2_declared": true,
+    "ds_declared": true,
+    "n_samples": 100,
+    "samples_match_targets": true,
+    "n_markers_output": 1739314,
+    "n_eval_sites_expected": 246037,
+    "n_eval_sites_covered": 246037,
+    "eval_coverage": 1.0,
+    "n_dr2_missing": 0,
+    "dr2_missing_fraction": 0.0,
+    "n_dr2_out_of_range": 0
+  }
+}

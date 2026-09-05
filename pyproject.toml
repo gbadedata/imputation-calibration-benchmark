@@ -6,6 +6,8 @@ requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
+    "numpy>=1.26",
+    "matplotlib>=3.8",
 ]
 
 [project.optional-dependencies]
