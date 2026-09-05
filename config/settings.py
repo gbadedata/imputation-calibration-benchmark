@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     # Site design (Phase 1)
     eval_maf_floor: float = 0.01  # evaluation sites require floor <= AF <= 1 - floor
+    n_array_sites: int = 20000  # thinning-mode array size (v5b release carries no rsIDs)
 
     # QC (Phase 2) - recorded here now so the report generator has one source of truth
     geno_missing_max: float = 0.02

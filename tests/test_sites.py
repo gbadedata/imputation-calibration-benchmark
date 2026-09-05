@@ -107,3 +107,54 @@ def test_write_partition_summary_counts(tmp_path):
     }
     assert (tmp_path / "array_sites.rsids.txt").read_text() == "rs1\n"
     assert (tmp_path / "evaluation_sites.rsids.txt").read_text() == "rs9\n"
+
+
+# ---- thin mode (primary for the v5b data, which carries no rsIDs) ----
+
+from src.sites import partition_sites_by_thinning  # noqa: E402
+
+
+def common_records(n, af=0.3, start_pos=1000):
+    return [rec(f"20:{start_pos + i * 10}", start_pos + i * 10, af) for i in range(n)]
+
+
+def test_thinning_selects_exact_count_and_disjoint():
+    records = common_records(50)
+    p = partition_sites_by_thinning(records, n_array=10, maf_floor=0.01)
+    assert len(p.array_sites) == 10
+    assert len(p.evaluation_sites) == 40
+    array_ids = {r.rsid for r in p.array_sites}
+    eval_ids = {r.rsid for r in p.evaluation_sites}
+    assert not array_ids & eval_ids
+
+
+def test_thinning_is_deterministic_and_spans_the_region():
+    records = common_records(50)
+    p1 = partition_sites_by_thinning(records, n_array=10, maf_floor=0.01)
+    p2 = partition_sites_by_thinning(records, n_array=10, maf_floor=0.01)
+    assert p1.array_sites == p2.array_sites
+    positions = [r.pos for r in p1.array_sites]
+    assert positions[0] == records[0].pos  # first common site included
+    assert positions[-1] == records[-1].pos  # last common site included
+    assert positions == sorted(positions)
+
+
+def test_thinning_pool_is_common_only_rare_excluded_from_both():
+    records = common_records(40) + [rec(f"20:{i}", i, 0.001) for i in range(1, 11)]
+    p = partition_sites_by_thinning(records, n_array=10, maf_floor=0.01)
+    assert p.n_eval_excluded_maf == 10  # in thin mode: rare sites excluded from both pools
+    all_afs = [r.af for r in p.array_sites + p.evaluation_sites]
+    assert all(0.01 <= af <= 0.99 for af in all_afs)
+
+
+def test_thinning_applies_shared_id_policy():
+    records = [rec(".", 5, 0.3), rec("20:100", 100, 0.3)] + common_records(40, start_pos=200)
+    dup = rec("20:200", 999, 0.4)  # duplicate of first common_records id
+    p = partition_sites_by_thinning(records + [dup], n_array=10, maf_floor=0.01)
+    assert p.n_missing_id == 1
+    assert p.n_duplicate_id == 1
+
+
+def test_thinning_requires_headroom_over_n_array():
+    with pytest.raises(SiteTableError, match="2x n_array"):
+        partition_sites_by_thinning(common_records(15), n_array=10, maf_floor=0.01)

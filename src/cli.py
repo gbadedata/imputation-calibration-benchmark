@@ -17,7 +17,13 @@ from pathlib import Path
 
 from config.settings import Settings
 from src.sample_design import design_samples, read_panel, read_sample_list, write_design
-from src.sites import partition_sites, read_hm3_rsids, read_site_table, write_partition
+from src.sites import (
+    partition_sites,
+    partition_sites_by_thinning,
+    read_hm3_rsids,
+    read_site_table,
+    write_partition,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -30,9 +36,10 @@ def main(argv: list[str] | None = None) -> int:
     p_design.add_argument("--removals", type=Path, default=None)
 
     p_sites = sub.add_parser("make-sites")
-    p_sites.add_argument("--hm3", type=Path, required=True)
+    p_sites.add_argument("--mode", choices=["thin", "hm3"], required=True)
     p_sites.add_argument("--site-table", type=Path, required=True)
     p_sites.add_argument("--outdir", type=Path, required=True)
+    p_sites.add_argument("--hm3", type=Path, default=None, help="required in hm3 mode")
 
     args = parser.parse_args(argv)
     settings = Settings()
@@ -43,9 +50,16 @@ def main(argv: list[str] | None = None) -> int:
         design = design_samples(panel, removals, settings)
         summary = write_design(design, args.outdir, settings)
     else:
-        hm3 = read_hm3_rsids(args.hm3)
         records = read_site_table(args.site_table)
-        partition = partition_sites(records, hm3, settings.eval_maf_floor)
+        if args.mode == "hm3":
+            if args.hm3 is None:
+                parser.error("--hm3 is required in hm3 mode")
+            hm3 = read_hm3_rsids(args.hm3)
+            partition = partition_sites(records, hm3, settings.eval_maf_floor)
+        else:
+            partition = partition_sites_by_thinning(
+                records, settings.n_array_sites, settings.eval_maf_floor
+            )
         summary = write_partition(partition, args.outdir)
 
     json.dump(summary, sys.stdout, indent=2)

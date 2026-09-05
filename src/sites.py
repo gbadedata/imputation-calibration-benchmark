@@ -1,17 +1,23 @@
 """Site design: partition chr20 biallelic SNPs into array sites and evaluation sites.
 
-Inputs (both produced by scripts/phase1.sh, never parsed from VCF here):
-- w_hm3.snplist: header 'SNP A1 A2', whitespace-separated, rsIDs genome-wide
-- site table TSV: ID<TAB>POS<TAB>AF per biallelic chr20 SNP (bcftools query output)
+Two modes:
 
-Policy, in order (each exclusion is counted, never silent - BUILD-SPEC Phase 1.2):
-1. rows with missing IDs ('.' or empty) are excluded from BOTH site sets: without an
-   rsID a site cannot be matched to the hm3 list nor reliably re-joined downstream
-2. duplicate rsIDs keep the first occurrence; later occurrences are excluded from both
-3. array sites   = remaining sites whose rsID is in the hm3 list
-4. evaluation    = remaining sites NOT in the array set with maf_floor <= AF <= 1 - maf_floor
+hm3 mode (retained, unused for the v5b data): intersect rsIDs with the HapMap3 list.
+  The 1kGP 20130502 v5b chr20 release carries NO rsIDs (ID column is '.' on every row,
+  verified 2026-09-04), so this mode is infeasible for the primary data. The code and
+  tests remain because the policy is correct and the reason it is unused is documented.
 
-Invariant: array_sites and evaluation_sites are disjoint by construction; tests assert it.
+thin mode (primary): deterministic uniform thinning to n_array sites. IDs are chr:pos
+  (set upstream by bcftools annotate --set-id). The thinning pool is restricted to
+  common variants (maf_floor <= AF <= 1 - maf_floor) BEFORE selection: real genotyping
+  arrays are deliberately common-biased, and an "array" of rare singletons would give
+  the imputation engine nothing to phase on. Selection is evenly spaced by position
+  order - reproducible from the repo alone, no seed involved.
+
+Shared policy, in order (each exclusion counted, never silent - BUILD-SPEC Phase 1.2):
+1. rows with missing IDs ('.' or empty) are excluded from BOTH site sets
+2. duplicate IDs keep the first occurrence; later occurrences excluded from both
+3. array/evaluation split per mode; array and evaluation are disjoint by construction
 """
 
 from __future__ import annotations
@@ -71,11 +77,8 @@ def read_site_table(path: Path) -> list[SiteRecord]:
     return records
 
 
-def partition_sites(
-    records: list[SiteRecord],
-    hm3_rsids: frozenset[str],
-    maf_floor: float,
-) -> SitePartition:
+def _apply_id_policy(records: list[SiteRecord]) -> tuple[list[SiteRecord], int, int]:
+    """Policy steps 1-2: drop missing IDs, dedupe keep-first -> (usable, n_missing, n_dup)."""
     n_missing = 0
     n_dup = 0
     seen: set[str] = set()
@@ -89,6 +92,15 @@ def partition_sites(
             continue
         seen.add(r.rsid)
         usable.append(r)
+    return usable, n_missing, n_dup
+
+
+def partition_sites(
+    records: list[SiteRecord],
+    hm3_rsids: frozenset[str],
+    maf_floor: float,
+) -> SitePartition:
+    usable, n_missing, n_dup = _apply_id_policy(records)
 
     array = tuple(r for r in usable if r.rsid in hm3_rsids)
     array_ids = {r.rsid for r in array}
@@ -109,6 +121,49 @@ def partition_sites(
         n_missing_id=n_missing,
         n_duplicate_id=n_dup,
         n_eval_excluded_maf=n_maf_excluded,
+    )
+
+
+def partition_sites_by_thinning(
+    records: list[SiteRecord],
+    n_array: int,
+    maf_floor: float,
+) -> SitePartition:
+    """Thin mode: n_array evenly spaced common sites become the array; remaining common
+    sites are the evaluation set; rare sites (outside the MAF window) join neither
+    (counted in n_eval_excluded_maf, which in this mode means 'excluded from both pools')."""
+    usable, n_missing, n_dup = _apply_id_policy(records)
+
+    common = sorted(
+        (r for r in usable if maf_floor <= r.af <= 1.0 - maf_floor),
+        key=lambda r: r.pos,
+    )
+    n_rare = len(usable) - len(common)
+
+    if n_array < 2:
+        raise SiteTableError(f"n_array must be >= 2, got {n_array}")
+    if len(common) < 2 * n_array:
+        raise SiteTableError(
+            f"thinning needs >= 2x n_array common sites (evaluation must remain non-trivial); "
+            f"have {len(common)} common sites for n_array={n_array}"
+        )
+
+    step = (len(common) - 1) / (n_array - 1)
+    idx = sorted({round(i * step) for i in range(n_array)})
+    if len(idx) != n_array:
+        raise SiteTableError(
+            f"even-spacing index collision: {len(idx)} unique of {n_array} requested"
+        )
+    idx_set = set(idx)
+    array = tuple(common[i] for i in idx)
+    evaluation = tuple(r for i, r in enumerate(common) if i not in idx_set)
+
+    return SitePartition(
+        array_sites=array,
+        evaluation_sites=evaluation,
+        n_missing_id=n_missing,
+        n_duplicate_id=n_dup,
+        n_eval_excluded_maf=n_rare,
     )
 
 

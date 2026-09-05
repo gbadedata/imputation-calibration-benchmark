@@ -26,3 +26,27 @@ OpenJDK 21.0.12, Beagle 5.5 (27Feb25.75f), plink2 alpha 7.4.
 <!-- After each scripts/phase1.sh run, append: date, git commit of the code that ran,
      samples_summary.json and sites_summary.json contents, md5sums of the four derived
      VCFs, and whether a kinship-removal list was applied. -->
+
+### Derivation run 2026-09-05, code commit 4c918e9
+```
+{
+  "seed": 42,
+  "n_targets": 100,
+  "n_panel_a": 561,
+  "n_panel_b": 503,
+  "n_removed_by_kinship": 0,
+  "target_superpop": "AFR",
+  "panel_b_superpop": "EUR"
+}
+{
+  "n_array_sites": 20000,
+  "n_evaluation_sites": 246037,
+  "n_missing_id_excluded": 0,
+  "n_duplicate_id_excluded": 1,
+  "n_eval_excluded_by_maf": 1473277
+}
+97bbd094630f414bf7eddf281a5429d7  data/derived/truth_targets.vcf.gz
+3dd135d39a259ab2f41a3652c28c1cba  data/derived/array_targets.vcf.gz
+2973186f5c798496e49b0cbb0691078c  data/derived/panelA.vcf.gz
+38fc6b76a211fb49071dfca896c2b65e  data/derived/panelB.vcf.gz
+```

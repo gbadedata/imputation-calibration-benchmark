@@ -2,7 +2,7 @@
 
 **Is Beagle's DR2 a calibrated confidence score - and does its calibration hold across
 ancestries?** A Nextflow-wrapped benchmark on 1000 Genomes chromosome 20: simulate array
-genotyping by masking WGS calls to HapMap3 sites, impute the masked targets against (A) an
+genotyping by masking WGS calls to a 20,000-site array-density site set, impute the masked targets against (A) an
 ancestry-matched and (B) a deliberately mismatched (EUR panel, AFR targets) reference panel,
 then grade every imputed genotype against the withheld WGS truth. DR2-vs-empirical-accuracy
 calibration curves with bootstrap CIs, an abstention threshold chosen on Condition A and
@@ -21,8 +21,12 @@ logged in [docs/verification.md](docs/verification.md).
 - **Single chromosome:** chr20 is a model system chosen for a 32 GB laptop budget.
   Calibration of per-variant confidence is measurable on one chromosome; nothing here is a
   polygenic-score result.
-- **Array simulation:** HapMap3 sites stand in for a commercial genotyping chip. Site density
-  is comparable; site-selection strategy of real chips is not reproduced.
+- **Array simulation:** the array is a deterministic uniform thinning of common
+  (MAF >= 0.01) biallelic SNPs to 20,000 sites - array density and common-variant bias
+  are mimicked; the site-selection strategy of real chips is not. HapMap3 intersection
+  was the original design but is infeasible here: the 1kGP 20130502 v5b chr20 release
+  carries no rsIDs (ID='.' on every row; docs/verification.md). The hm3 code path is
+  retained and tested but unused.
 - **Truth definition:** "truth" is the 1kGP phase 3 release call set, which has its own error
   rate; concordance with it is the measured quantity.
 
