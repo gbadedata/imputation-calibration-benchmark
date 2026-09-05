@@ -225,6 +225,10 @@ every input site classified, nothing dropped silently.
 
 Requires: bcftools >= 1.19, plink2 (alpha 7.4 tested), Beagle 5.5, Java >= 1.8.
 
+## Write-up
+
+Full narrative including the war stories: [Your Imputation Confidence Score Is Lying to Your Diverse Cohort. I Measured by How Much](https://dev.to/gbadedata/your-imputation-confidence-score-is-lying-to-your-diverse-cohort-i-measured-by-how-much-1100)
+
 ## References
 
 - Browning BL et al., Beagle 5 imputation (Am J Hum Genet); Beagle 5.5, 27Feb25.75f
